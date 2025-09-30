@@ -11,10 +11,20 @@ const { authenticateToken, requireAdmin } = require('./middleware/auth');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Servir arquivos estáticos do React em produção
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'public')));
+}
 
 // Configuração do multer para upload de arquivos
 const storage = multer.diskStorage({
@@ -310,6 +320,15 @@ const fs = require('fs');
   }
 });
 
-app.listen(PORT, () => {
+// Rota catch-all para React Router em produção
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
+      res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    }
+  });
+}
+
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🎵 Soulful Roots Server rodando na porta ${PORT}`);
 });
