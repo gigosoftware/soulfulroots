@@ -169,6 +169,21 @@ app.put('/api/albums/:id', authenticateToken, requireAdmin, upload.single('cover
   });
 });
 
+app.delete('/api/albums/:id', authenticateToken, requireAdmin, (req, res) => {
+  const { id } = req.params;
+  
+  // Primeiro deletar todas as músicas do álbum
+  db.run('DELETE FROM songs WHERE album_id = ?', [id], (err) => {
+    if (err) return res.status(500).json({ error: 'Erro ao deletar músicas do álbum' });
+    
+    // Depois deletar o álbum
+    db.run('DELETE FROM albums WHERE id = ?', [id], (err) => {
+      if (err) return res.status(500).json({ error: 'Erro ao deletar álbum' });
+      res.json({ message: 'Álbum deletado com sucesso' });
+    });
+  });
+});
+
 // Rotas de músicas
 app.get('/api/albums/:id/songs', authenticateToken, (req, res) => {
   const { id } = req.params;
